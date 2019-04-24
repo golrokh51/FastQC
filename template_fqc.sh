@@ -1,8 +1,6 @@
 #!/bin/bash
 #SBATCH --time=1:00:00
 #SBATCH --cpus-per-task=1
-#SBATCH --out=$__WORKDIR__/__JOBID__/results/_logs/qc___JOBID__.out
-#SBATCH --err=$__WORKDIR__/__JOBID__/results/_logs/qc___JOBID__.err
 #SBATCH --mail-user=__EMAIL__
 #SBATCH --mail-type=__EMAIL_TYPE__
 
