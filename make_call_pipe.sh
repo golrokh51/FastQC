@@ -8,36 +8,42 @@
 # 
 #  
 # # 
-WORK_DIR=$__WORKDIR__
+WORKDIR=$__WORKDIR__
 
-mkdir $WORK_DIR/$1/results/_logs $WORK_DIR/$1/results/_fastqc $WORK_DIR/$1/results/_TMP
-rm $WORK_DIR/$1/results/_logs/qc_* $WORK_DIR/$1/results/_fastqc/*
+mkdir $WORKDIR/$1/results/_logs $WORKDIR/$1/results/_fastqc $WORKDIR/$1/results/_TMP
+rm $WORKDIR/$1/results/_logs/qc_* $WORKDIR/$1/results/_fastqc/*
 
-temp_path=$WORK_DIR/FastQC
-fld=$(ls -1  $temp_path/template_*.sh |awk -F"/" '{print NF}' | uniq)
+temp_path=$WORKDIR/FastQC
+WORKDIR=$WORKDIR/$1
+inputFiles=$WORKDIR/data/_all_fq.txt
+labels=$WORKDIR/results/_labels.txt
+fld=$(ls $WORKDIR/data/*_R1*.fastq.gz |awk -F"/" '{print NF}' | uniq)
 fld=$((fld+0))
+ls $WORKDIR/data/*_R1*.fastq.gz |cut -f$fld -d"/" | cut -f1 -d"." |sed 's/.$//g' |sed 's/.$//g' | uniq  > $labels
+
+errDir="$WORKDIR/results/_logs/$5.out"
+outDir="$WORKDIR/results/_logs/$5.err"
+ls -1  $WORKDIR/data/*_R1*.fastq.gz  > $inputFiles
+WORKDIR="$WORKDIR/scripts"
+
 
 # rm $WORK_DIR/180911_Lim/data/*.fq
 
-for i in `ls -1  $temp_path/template_*.sh | cut -f$fld -d"/"`;  do  sed "s/__JOBID__/$1/g"  $temp_path/$i |sed "s/__EMAIL__/$2/g" |sed "s/__EMAIL_TYPE__/$3/g"  > $WORK_DIR/$1/scripts/$i; done	
+for i in `ls -1  $temp_path/template_*.sh | cut -f$fld -d"/"`;  do  sed "s/__JOBID__/$1/g"  $temp_path/$i |sed "s/__EMAIL__/$2/g"|sed "s~__WORK_DIR__~$WORKDIR~g"|sed "s~__ERR_LOG__~$errDir~g"|sed "s~__OUT_LOG__~$outDir~g"|sed "s/__EMAIL_TYPE__/$3/g"> $WORKDIR/$i; echo $i; done	
+# 
+# |sed "s/__ERR_LOG__/$errDir/g"|sed "s/__OUT_LOG__/$outDir/g" 
 
-
-inputFiles=$WORK_DIR/$1/data/_all_fq.txt
-labels=$WORK_DIR/$1/results/_labels.txt
+# 
 # list all your subject and put them in a file
+# |sed "s/__WORK_DIR__/${WORK_DIR}/g"
+#   |sed "s/__ERR_LOG__/$errDir" |sed "s/__OUT_LOG__/$outDir"
 
-########????!!!!!! WHAT IS THIS SED COMMAND IS DOING HERE??? !!!!!!????########
-ls -1  $WORK_DIR/$1/data/*_R1*.fastq.gz |sed "s/JOBID/$1/g" > $inputFiles
-########????!!!!!!!!!!!!!!!!!sed "s/JOBID/$1/g"!!!!!!!!!!!!!!!!!!!!????########
 
-fld=$(ls $WORK_DIR/$1/data/*_R1*.fastq.gz |awk -F"/" '{print NF}' | uniq)
-fld=$((fld+0))
 
-ls $WORK_DIR/$1/data/*_R1*.fastq.gz |cut -f$fld -d"/" | cut -f1 -d"." |sed 's/.$//g' |sed 's/.$//g' | uniq  > $labels
 
 
 # more template_hisat2.sh
-out1=$(sbatch --job-name=QC_$1 --account=$4 ${WORK_DIR}/${1}/scripts/template_fqc.sh)
+out1=$(sbatch --job-name=QC_$1 --account=$4 ${WORKDIR}/template_fqc.sh)
 JOB_ID1=$(echo $out1 | cut -d" " -f4)
 echo $JOB_ID1
 
